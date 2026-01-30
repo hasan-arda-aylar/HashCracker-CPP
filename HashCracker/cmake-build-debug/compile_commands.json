@@ -1,0 +1,8 @@
+[
+{
+  "directory": "/home/arda/CLionProjects/HashCracker/cmake-build-debug",
+  "command": "/usr/bin/c++ -g -std=gnu++20 -fdiagnostics-color=always -fmodules-ts -fmodule-mapper=CMakeFiles/HashCracker.dir/HashCracker.cpp.o.modmap -MD -fdeps-format=p1689r5 -x c++ -o CMakeFiles/HashCracker.dir/HashCracker.cpp.o -c /home/arda/CLionProjects/HashCracker/HashCracker.cpp",
+  "file": "/home/arda/CLionProjects/HashCracker/HashCracker.cpp",
+  "output": "/home/arda/CLionProjects/HashCracker/cmake-build-debug/CMakeFiles/HashCracker.dir/HashCracker.cpp.o"
+}
+]
