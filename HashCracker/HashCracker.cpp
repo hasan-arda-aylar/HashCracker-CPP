@@ -6,6 +6,7 @@
 #include <sstream>
 #include <algorithm>
 #include <cctype>
+#include <vector>
 
 
 
@@ -45,13 +46,55 @@ void toLowerCase(std::string& s) {
     );
 }
 
+
+std::vector<const EVP_MD*> detectAlgorithms(
+        const std::string& hash,
+        std::vector<std::string>& names)
+{
+    std::vector<const EVP_MD*> algos;
+
+    switch (hash.length()) {
+        case 32:
+            algos.push_back(EVP_md5());
+            names.push_back("MD5");
+            break;
+        case 40:
+            algos.push_back(EVP_sha1());
+            names.push_back("SHA-1");
+
+            algos.push_back(EVP_ripemd160());
+            names.push_back("RIPEMD-160");
+            break;
+        case 56:
+            algos.push_back(EVP_sha224());
+            names.push_back("SHA-224");
+            break;
+        case 64:
+            algos.push_back(EVP_sha256());
+            names.push_back("SHA-256");
+            break;
+        case 96:
+            algos.push_back(EVP_sha384());
+            names.push_back("SHA-384");
+            break;
+        case 128:
+            algos.push_back(EVP_sha512());
+            names.push_back("SHA-512");
+            break;
+    }
+
+    return algos;
+}
+
+
 int main() {
 
 
     std::string filePath;
     std::string algorithmName;
     std::string hashValue;
-    int hashType;
+    int choice;
+
 
     const EVP_MD* md = nullptr;
     std::fstream file;
@@ -62,28 +105,74 @@ int main() {
     std::cout << "Please enter the hash that you want to bruteforce:" << std::endl;
     std::cin >> hashValue; // target hash that we will try to match
     toLowerCase(hashValue); // Convert the input hash to lowercase to ensure consistent comparison
+    std::cout << "Dou you want to autodetect the algorithm?:\n " << "1: Yes\n " << "2: No" << std::endl;
+    std::cin >> choice;
+    if (choice == 1) {
+
+        std::vector<std::string> detectedNames;
+        std::vector<const EVP_MD*> detectedAlgos =
+            detectAlgorithms(hashValue, detectedNames);
+
+        if (detectedAlgos.empty()) {
+            std::cout << "Could not auto-detect algorithm.\n";
+            return 1;
+        }
+
+        if (detectedAlgos.size() == 1) {
+            md = detectedAlgos[0];
+            algorithmName = detectedNames[0];
+
+            std::cout << "Auto-detected algorithm: "
+                  << algorithmName << std::endl;
+        }
+
+        else {
+            std::cout << "Multiple possible algorithms found:\n";
+            for (size_t i = 0; i < detectedNames.size(); i++) {
+                std::cout << i + 1 << ": " << detectedNames[i] << std::endl;
+            }
+
+
+            std::cout << "Select algorithm: ";
+            std::cin >> choice;
+
+            if (choice < 1 || choice > detectedAlgos.size()) {
+                std::cout << "Invalid selection.\n";
+                return 1;
+            }
+
+            md = detectedAlgos[choice - 1];
+            algorithmName = detectedNames[choice - 1];
+        }
+
+
+    }else{
+        std::cout << "Supported algorithms :\n " << "1: MD5\n 2: Ripmed-160\n 3: Sha1\n 4: Sha224\n 5: Sha-256\n "
+        "6: Sha-384\n 7: Sha-512\n Please make an selection :\n"<< std::endl;
+
+
+        // algorithm selection loop
+        while (true){
+            bool valid = false;
+            std::cin >> choice;
+            switch (choice) {
+                case 1 : algorithmName = "MD5";valid = true;md = EVP_md5();break;
+                case 2 : algorithmName = "Ripemd-160";valid = true;md = EVP_ripemd160();break;
+                case 3 : algorithmName = "Sha1";valid = true;md = EVP_sha1();break;
+                case 4 : algorithmName = "Sha224";valid = true;md = EVP_sha224();break;
+                case 5 : algorithmName = "Sha256";valid = true;md = EVP_sha256();break;
+                case 6 : algorithmName = "Sha384";valid = true;md = EVP_sha384();break;
+                case 7 : algorithmName = "Sha512";valid = true;md = EVP_sha512();break;
+                default : std::cout << "Invalid choice please try again: "<< std::endl;valid=false;break;
+            }
+            if (valid) break; // exit loop if user chose valid
+        }
+    }
+
+
+
     std::cout << "Please enter the file path to the world list: " << std::endl;
     std::cin >> filePath; // path to wordlist file
-    std::cout << "Supported algorithms :\n " << "1: MD5\n 2: Ripmed-160\n 3: Sha1\n 4: Sha224\n 5: Ripmed-160\n "
-    "6: Sha-384\n 7: Sha-512\n Please make an selection :\n"<< std::endl;
-
-
-    // algorithm selection loop
-    while (true){
-        bool valid = false;
-        std::cin >> hashType;
-        switch (hashType) {
-            case 1 : algorithmName = "MD5";valid = true;md = EVP_md5();break;
-            case 2 : algorithmName = "Ripemd-160";valid = true;md = EVP_ripemd160();break;
-            case 3 : algorithmName = "Sha1";valid = true;md = EVP_sha1();break;
-            case 4 : algorithmName = "Sha224";valid = true;md = EVP_sha224();break;
-            case 5 : algorithmName = "Sha256";valid = true;md = EVP_sha256();break;
-            case 6 : algorithmName = "Sha384";valid = true;md = EVP_sha384();break;
-            case 7 : algorithmName = "Sha512";valid = true;md = EVP_sha512();break;
-            default : std::cout << "Invalid choice please try again: "<< std::endl;valid=false;break;
-        }
-        if (valid) break; // exit loop if user chose valid 
-    }
     std::cout <<"Selected algorithm: "<< algorithmName << std::endl;
     file.open(filePath, std::ios::in );
     EVP_MD_CTX* ctx = EVP_MD_CTX_new();
